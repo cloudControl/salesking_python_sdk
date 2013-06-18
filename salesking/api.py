@@ -10,7 +10,8 @@ except ImportError:
 
 from urllib import urlencode
 import requests
-from oauth_hook import OAuthHook
+from requests_oauthlib import OAuth2Session
+from oauthlib.oauth2 import BackendApplicationClient
 
 from salesking.conf import settings
 from salesking import exceptions
@@ -29,84 +30,100 @@ class SalesKingApiBase(object):
         self.sk_user = settings.API['sk_user']
         self.sk_pw = settings.API['sk_pw']
         # use oauth only if basic auth is not possible
-        self.use_oauth = (self.sk_user is None or self.sk_pw is None)
+        self.use_oauth = (not self.sk_user or not self.sk_pw)
         self.access_token_url = u"%s%s" % (self.base_url, settings.ACCESS_TOKEN_URL)
-        self.client = None
+        self.auth_url = u"%s%s" % (self.base_url, settings.AUTH_URL)
+
         if self.use_oauth:
-            self.oauth_hook = OAuthHook(
-                consumer_key=self.app_id,
-                consumer_secret=self.app_secret,
-                header_auth=True)
 
-        if self.app_id is None or len(self.app_id) == 0:
-            raise Exception("please configure your sdk in salesking.conf.local_settings")
+            self.client = OAuth2Session(
+                client=BackendApplicationClient(
+                    client_id=self.app_id),
+                scope=self.app_scope,
+                redirect_uri=self.oauth_redirect_url)
 
-    def _get_authorization_url(self, scope=False):
-        params = {
-            u"client_id": self.app_id,
-            u"scope": scope if scope else self.app_scope,
-            u"redirect_uri": self.redirect_url
-        }
-        return u"%s?%s" % (self.auth_url, urlencode(params))
+                # u = self.client.authorization_url(self.auth_url)
+                # token = self.client.fetch_token(
+                    # self.access_token_url,
+                    # client_id=self.app_id,
+                    # client_secret=self.app_secret)
 
-    def _get_access_token_url(self, code):
-        params = {
-            u"client_id": self.app_id,
-            u"client_secret": self.app_secret,
-            u"redirect_uri": self.oauth_redirect_url,
-            u"code": code
-        }
-        return u"%s?%s" % (self.access_token_url, urlencode(params))
-
-    def request(self, url, method=u"get", data=None, headers=None, **kwargs):
-        """
-        public method for doing the live request
-        """
-
-        url, method, data, headers, kwargs = self._pre_request(url,
-                                                               method=method,
-                                                               data=data,
-                                                               headers=headers,
-                                                               **kwargs)
-        response = self._request(url, method=method, data=data, headers=headers, **kwargs)
-        response = self._post_request(response)
-        response = self._handle_response(response)
-
-        return response
-
-    def _pre_request(self, url, method=u"get", data=None, headers=None, **kwargs):
-        """
-        hook for manipulating the _pre request data
-        """
-        return url, method, data, headers, kwargs
-
-    def _request(self, url, method=u"get", data=None, headers=None, **kwargs):
-        raise Exception("_request needs to be implemented in subclass")
+        else:
+            self.client = requests.Session(auth=(self.sk_user, self.sk_pw))
 
 
-    def _post_request(self, response):
-        """
-        hook for post request handling
-        """
-        #print "response.content:%s" % (response.content)
-        return response
+def _get_authorization_url(self, scope=False):
+    params = {
+        u"client_id": self.app_id,
+        u"scope": scope if scope else self.app_scope,
+        u"redirect_uri": self.redirect_url
+    }
+    return u"%s?%s" % (self.auth_url, urlencode(params))
 
-    def _handle_response(self, response):
-        """
-        hook for hanlding the response
-        """
-        return response
 
-    def _de_hydrate(self, response):
-        log.debug("response: %s" % response.text)
-        return json.loads(response.text)
+def _get_access_token_url(self, code):
+    params = {
+        u"client_id": self.app_id,
+        u"client_secret": self.app_secret,
+        u"redirect_uri": self.oauth_redirect_url,
+        u"code": code
+    }
+    return u"%s?%s" % (self.access_token_url, urlencode(params))
 
-    def request_access_token(self, code):
-        url = self._get_access_token_url(code)
-        r = self.request(url)
-        if r.status_code == 200 and r.text.find(u"error") == -1:
-            return self._de_hydrate(r)
-        raise exceptions.SalesKingException("REQUESTTOKEN_ERROR", "Could not fetch access_token", r)
+
+def request(self, url, method=u"get", data=None, headers=None, **kwargs):
+    """
+    public method for doing the live request
+    """
+
+    url, method, data, headers, kwargs = self._pre_request(url,
+                                                           method=method,
+                                                           data=data,
+                                                           headers=headers,
+                                                           **kwargs)
+    response = self._request(url, method=method, data=data, headers=headers, **kwargs)
+    response = self._post_request(response)
+    response = self._handle_response(response)
+
+    return response
+
+
+def _pre_request(self, url, method=u"get", data=None, headers=None, **kwargs):
+    """
+    hook for manipulating the _pre request data
+    """
+    return url, method, data, headers, kwargs
+
+
+def _request(self, url, method=u"get", data=None, headers=None, **kwargs):
+    raise Exception("_request needs to be implemented in subclass")
+
+
+def _post_request(self, response):
+    """
+    hook for post request handling
+    """
+    return response
+
+
+def _handle_response(self, response):
+    """
+    hook for hanlding the response
+    """
+    return response
+
+
+def _de_hydrate(self, response):
+    log.debug("response: %s" % response.text)
+    return json.loads(response.text)
+
+
+def request_access_token(self, code):
+    url = self._get_access_token_url(code)
+    r = self.request(url)
+    if r.status_code == 200 and r.text.find(u"error") == -1:
+        return self._de_hydrate(r)
+    raise exceptions.SalesKingException("REQUESTTOKEN_ERROR", "Could not fetch access_token", r)
 
 
 class APIClient(SalesKingApiBase):
@@ -134,19 +151,7 @@ class APIClient(SalesKingApiBase):
         - oauth not implemented yet
         - use basic auth please
         """
-        if not self.use_oauth:
-            auth = (self.sk_user, self.sk_pw)
-            if not self.client:
-                self.client = requests.session()
-            r = self.client.request(method, url, headers=headers, data=data, auth=auth, **kwargs)
-        else:
-            if not self.client:
-                self.client = requests.Session()
-                self.client.hooks = {'pre_request': self.oauth_hook}
-
-            r = self.client.request(method, url, headers=headers, data=data, **kwargs)
-
-        return r
+        return self.client.request(method, url, headers=headers, data=data, **kwargs)
 
     def _handle_response(self, response):
         status = response.status_code

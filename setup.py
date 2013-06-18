@@ -23,7 +23,7 @@ setup(
     packages=find_packages('.'),
     install_requires=[
         'requests',
-        'requests-oauth',
+        'requests-oauthlib',
         'certifi>=0.0.7',
         'oauthlib',
         'chardet>=1.0.0',
