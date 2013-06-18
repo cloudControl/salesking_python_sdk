@@ -1,27 +1,28 @@
 from salesking.tests.base import SalesKingBaseTestCase
 from salesking import api, resources
 
-class ResourceBaseTestCase(SalesKingBaseTestCase):
 
+class ResourceBaseTestCase(SalesKingBaseTestCase):
     valid_data = {'organisation': u"salesking",
                   'last_name': u"Jane",
                   'first_name': u"Dow",
                   'notes': u"APITEST",
                   'email': u"salesking.py-api@mailinator.com"
     }
-    
+
     required_missing_data = {
-                  'last_name': u"Jane",
-                  'first_name': u"Dow"
+        'last_name': u"Jane",
+        'first_name': u"Dow"
     }
-    
+
     class MockResponse(object):
         mock_id = u"a8Ts8KsGar4OMPabxfpGMl"
         mock_number = u"K-2012-012"
         mock_created_at = u"2012-12-19T18:19:25+01:00"
         mock_first_name = u"Dow"
+
         def __init__(self):
-            self.content =u'''
+            self.content = u'''
             {"client":
             {"id":"a8Ts8KsGar4OMPabxfpGMl","number":"K-2012-012","organisation":"salesking","last_name":"Jane",
             "first_name":"Dow","gender":null,"notes":null,"position":null,"title":null,"tax_number":null,
@@ -48,24 +49,25 @@ class ResourceBaseTestCase(SalesKingBaseTestCase):
                 {"rel":"emails","href":"clients/a8Ts8KsGar4OMPabxfpGMl/emails"}
             ]
         }
-        '''.replace(u"\n",u"").replace(u"\t",u"").replace(u" ",u"")
+        '''.replace(u"\n", u"").replace(u"\t", u"").replace(u" ", u"")
+
     mock_response = MockResponse()
 
+
 class ResourceFactoryTestCase(ResourceBaseTestCase):
-        
     def test_initialize_client_resource_success(self):
         model = resources.get_model_class("client")
         client = model(self.valid_data)
-        self.assertEquals(client.__class__.__name__,u'client')
-        self.assertEquals(client.organisation,u'salesking')
-        self.assertEquals(client.first_name,u"Dow")
+        self.assertEquals(client.__class__.__name__, u'client')
+        self.assertEquals(client.organisation, u'salesking')
+        self.assertEquals(client.first_name, u"Dow")
         #autoinitialize ? 
         self.assertFalse(client.__api__ is None)
         msg = "data is: %s" % (client.get_data())
-        self.assertTrue(len(client.get_data())>0,msg)
+        self.assertTrue(len(client.get_data()) > 0, msg)
         client.first_name = u"honey"
-        self.assertEquals(client.first_name,u"honey")
-        client.gender="male"
+        self.assertEquals(client.first_name, u"honey")
+        client.gender = "male"
 
     def test_initialize_client_required_missing_success(self):
         """
@@ -75,31 +77,30 @@ class ResourceFactoryTestCase(ResourceBaseTestCase):
         thrown = False
         try:
             model(self.required_missing_data)
-        except ValueError, ex:
+        except ValueError:
             thrown = True
         self.assertFalse(thrown)
-        
+
     def test_initialize_client_empty_success(self):
         model = resources.get_model_class("client")
         thrown = False
-        client = None
         try:
-            client=model()
-        except ValueError, ex:
+            model()
+        except ValueError:
             thrown = True
         self.assertFalse(thrown)
-        
+
     def test_client_save_response_mock_success(self):
         clnt = api.APIClient()
-        model = resources.get_model_class("client",api=clnt)
+        model = resources.get_model_class("client", api=clnt)
         client = model(self.valid_data)
-        self.assertEquals(client.__class__.__name__,u'client')
+        self.assertEquals(client.__class__.__name__, u'client')
         msg = "data is: %s" % (client.get_data())
-        self.assertTrue(len(client.get_data())>0,msg)
+        self.assertTrue(len(client.get_data()) > 0, msg)
         ### mock the save response ###
         response = self.mock_response
         obj = client.get_object_from_response(response)
-        self.assertEquals(obj.__class__.__name__,u'client')
+        self.assertEquals(obj.__class__.__name__, u'client')
         self.assertEquals(obj.first_name, response.mock_first_name)
         self.assertEquals(obj.number, response.mock_number)
         self.assertEquals(obj.get_id(), response.mock_id)
@@ -117,14 +118,14 @@ class ResourceFactoryTestCase(ResourceBaseTestCase):
         address.address2 = u"Appartment Bar"
         address.address_type = u"work"
         msg = "data is: %s" % (address.get_data())
-        self.assertTrue(len(address.get_data())>0,msg)
+        self.assertTrue(len(address.get_data()) > 0, msg)
         msg = "data is: %s" % (client.get_data())
-        self.assertTrue(len(client.get_data())>0,msg)
+        self.assertTrue(len(client.get_data()) > 0, msg)
         client.addresses = [address]
         msg = "data is: %s" % (client.get_data())
-        self.assertTrue(client.get_data().find(u"Duisburg")>0,msg)
-        
-         
+        self.assertTrue(client.get_data().find(u"Duisburg") > 0, msg)
+
+
 #    def test_client_resource_schema_get_success(self):
 #        clnt = api.APIClient()
 #        model = resources.get_model_class("client",api=clnt)

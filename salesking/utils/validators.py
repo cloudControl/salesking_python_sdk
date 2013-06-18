@@ -3,8 +3,8 @@
 
 import iso8601
 import validictory
-from validictory.validator import DEFAULT_FORMAT_VALIDATORS
-    
+from validictory.validator import DEFAULT_FORMAT_VALIDATORS, ValidationError
+
 
 def validate_format_iso8601(validator, fieldname, value, format_option):
     """
@@ -18,6 +18,7 @@ def validate_format_iso8601(validator, fieldname, value, format_option):
         raise ValidationError(
             "Value %(value)r of field '%(fieldname)s' is not in "
             "'iso8601 YYYY-MM-DDThh:mm:ss(+/-)hh:mm' format" % locals())
+
 
 def json_schema_validation_format(value, schema_validation_type):
     """

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-SALESKING_API={
+SALESKING_API = {
     'APP_ID': u"YOUR APP ID",
     'APP_SECRET': u"YOUR APP SECRET",
     'SK_SUBDOMAIN': u"YOURSUBDOMAIN",

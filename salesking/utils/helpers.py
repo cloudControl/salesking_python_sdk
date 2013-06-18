@@ -1,26 +1,23 @@
-import sys
-import os
-import logging
-from StringIO import StringIO
-
 try:
     import simplejson as json
 except ImportError:
     import json
+
 
 def pluralize(data_type):
     """
     adds s to the data type or the correct english plural form
     """
     known = {
-             u"address": u"addresses", 
-             u"company": u"companies"
+        u"address": u"addresses",
+        u"company": u"companies"
     }
     if data_type in known.keys():
         return known[data_type]
     else:
         return u"%ss" % data_type
-    
+
+
 def remove_properties_containing_None(properties_dict):
     """
     removes keys from a dict those values == None
@@ -28,7 +25,7 @@ def remove_properties_containing_None(properties_dict):
     the type or format of the property does not match
     """
     # remove empty properties - as validations may fail
-    new_dict  = dict()
+    new_dict = dict()
     for key in properties_dict.keys():
         value = properties_dict[key]
         if value is not None:
@@ -36,15 +33,13 @@ def remove_properties_containing_None(properties_dict):
     return new_dict
 
 
-
-
-    
 def json_to_py(j):
     o = json.loads(j)
     if isinstance(o, dict):
         return dict_to_object(o)
     else:
-        return dict_to_object({ "response": o }).response
+        return dict_to_object({"response": o}).response
+
 
 def dict_to_object(d):
     """Recursively converts a dict to an object"""
